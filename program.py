@@ -5,7 +5,9 @@ import algo as algo
 import string
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib import pyplot as plt
 import arrowGraphGenerator as agg
 
 from beautifultable import BeautifulTable
@@ -27,12 +29,6 @@ def main_menu():
         file_item = FunctionItem("{}".format(file), create_algo_menu, [file_path])
         menu.append_item(file_item)
 
-    # default_file = FunctionItem("Pouzit default subor def.xlsl", create_algo_menu, [file])
-    # custom_file = FunctionItem("Zadat nazov vlastneho suboru", create_algo_menu, [""])
-    #
-    # menu.append_item(default_file)
-    # menu.append_item(custom_file)
-
     menu.show()
 
 
@@ -41,7 +37,7 @@ def create_algo_menu(file):
         file = Screen().input(prompt="Zadaj nazov suboru: ")
         file = [folder, file]
 
-    algo_menu = ConsoleMenu("Algoritmy. Pouzity subor {}".format(file[1]), "Moznosti:")
+    algo_menu = ConsoleMenu("Pouzity subor {}".format(file[1]), "Moznosti:")
     floyd_item = FunctionItem("Floydov algo", floyd, [file])
     prim_item = FunctionItem("Minimalna kostra", prim, [file])
     min_add_item = FunctionItem("Minimalny sucet matic", minimal_addition, [file])
@@ -73,7 +69,8 @@ def create_algo_menu(file):
     algo_menu.show()
 
 def get_menu_files():
-    files = [file for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file)) and "~$" not in file]
+    files = [file for file in os.listdir(folder) if os.path.isfile(os.path.join(folder, file))
+             and "~$" not in file and ".xlsx" in file]
     return files
 
 
@@ -132,7 +129,6 @@ def create_graph(file):
         for y in range(dist_matrix.shape[1]):
             if dist_matrix[x][y] != 0:
                 edges.append([letters[x], letters[y], {'weight': dist_matrix[x][y]}])
-    #print(edges)
 
     graph.add_edges_from(edges)
 
@@ -146,9 +142,10 @@ def create_graph(file):
     nx.draw_networkx_labels(graph, pos)
 
     graph_path = pathlib.Path(folder, "graph.png")
-    plt.savefig(graph_path)
+    fig = plt.savefig(graph_path)
     plt.show()
-    plt.close()
+
+    plt.close(fig)
 
     # open file with default image program
     # os.startfile(graph_path)
@@ -289,7 +286,7 @@ def arrow_diagram(file):
     pos = nx.spring_layout(graph, scale=3)
     #pos = nx.planar_layout(graph, scale=2)
     #pos = nx.kamada_kawai_layout(graph, scale=2)
-    plt.figure(1, figsize=(10, 6))
+    fig = plt.figure(1, figsize=(10, 6))
     nx.draw_networkx_edges(graph, pos, full_edges)
     collection = nx.draw_networkx_edges(graph, pos, dummy_edges)
     for patch in collection:
@@ -339,16 +336,12 @@ def node_diagram(file):
     #pos = nx.planar_layout(graph)
     pos = nx.spring_layout(graph, scale=3)
     #pos = nx.kamada_kawai_layout(graph)
-    plt.figure(1, figsize=(10, 6))
+    fig = plt.figure(1, figsize=(10, 6))
     nx.draw_networkx_nodes(graph, pos, nodes)
     nx.draw_networkx_edges(graph, pos, edges)
     nx.draw_networkx_labels(graph, pos)
 
     plt.show()
-
-
-
-
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import itertools
 import string
 
 from openpyxl import Workbook
@@ -352,8 +353,8 @@ def cpm(file):
     import arrowGraphGenerator as agg
     tasks = get_tasks(file)
     nodes, edges = agg.generate_arrow_graph(tasks)
-    #tasks = tasks.tolist()
-    tasks = list(tasks)
+    tasks = tasks.tolist()
+    #tasks = list(tasks)
 
 
     dummy_edges = [edge for edge in edges if edge[2]['name'] == '']
@@ -394,15 +395,28 @@ def cpm(file):
 
     dummy_edges = [edge for edge in edges if edge[2]['name'] is '']
 
-    letters = string.ascii_uppercase
-    # for index, edge in enumerate(dummy_edges):
-        # tasks.append(["FC{}".format(index+1), [edge[0], edge[1]], '0'])
-
     for task in tasks:
-        task[1] = [[edge[0], edge[1]] for edge in edges if edge[2]['name'] == task[0]]
+        task[1] = list(itertools.chain.from_iterable(
+            [[edge[0], edge[1]] for edge in edges if edge[2]['name'] == task[0]]))
+
+    for index, edge in enumerate(dummy_edges):
+        # print(edge[0])
+        tasks.append(["FC{}".format(index + 1), [edge[0], edge[1]], '0'])
+
+    zm = []
+    km = []
+    zm.append(0)
+    km.append(int(tasks[0][2]))
+
+    print(tasks)
     for task in tasks:
-        print(task)
-    #print(tasks)
+        if task is not tasks[0]:
 
-
-cpm("input/cpm2.xlsx")
+            print(task)
+            what = [task_next[0] for task_next in tasks if task_next[1][1] == task[1][0]]
+            print(what)
+            km_max = []
+            # for taks in what:
+            #     km[taks]
+            km_max = max([k for k in km if k])
+            # zm.append(max(km[index for index in what]))
