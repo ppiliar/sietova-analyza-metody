@@ -77,14 +77,16 @@ def prim(file):
     mst = np.vstack(spanning_edges)
     result = [[]]
     weight = 0
-    for edge in mst:
-        weight += orig_matrix[edge[0]][edge[1]]
-        v1 = string.ascii_uppercase[edge[0]]
-        v2 = string.ascii_uppercase[edge[1]]
-        edge = v1 + "->" + v2
-        result[0].append(edge)
-    result.append(["Vaha", weight])
-    return result
+
+    r_arr = [(edge, orig_matrix[edge[0]][edge[1]])for edge in mst]
+    # for edge in mst:
+    #     weight += orig_matrix[edge[0]][edge[1]]
+    #     v1 = string.ascii_uppercase[edge[0]]
+    #     v2 = string.ascii_uppercase[edge[1]]
+    #     edge = v1 + "->" + v2
+    #     result[0].append(edge)
+    # result.append(["Vaha", weight])
+    return r_arr
 
 
 def minimal_addition(file):
@@ -97,7 +99,7 @@ def minimal_addition(file):
     # max number of vertices is 2^20
     s = 0
     for s in range(1, 20):
-        if (size - 1) < pow(2, s):
+        if (size - 1) <= pow(2, s):
             break
 
     result = []
@@ -134,13 +136,9 @@ def minimal_addition(file):
 
 def minimal_addition_minimum_flow(file):
     dist_matrix = get_matrix(file)
+    dist_matrix = np.where(dist_matrix == "M", 0, dist_matrix).astype(int)
 
-    diagonal = dist_matrix.diagonal()
-    for val in diagonal:
-        if val != "M":
-            raise Exception("Na diagonale musia byt M")
-
-    dist_matrix = np.where(dist_matrix == "M", inf, dist_matrix).astype(int)
+    np.fill_diagonal(dist_matrix, 999999)
 
     size = dist_matrix.shape[0]
     change_matrix = np.zeros((size, size), dtype=int)
@@ -148,7 +146,7 @@ def minimal_addition_minimum_flow(file):
     # max number of vertices is 2^20
     s = 0
     for s in range(1, 20):
-        if (size - 1) < pow(2, s):
+        if (size - 1) <= pow(2, s):
             break
 
     result = []
@@ -187,23 +185,19 @@ def minimal_addition_minimum_flow(file):
         result.append(np.char.add(res_mat, fchange_mat))
     return result
 
+
 def minimal_addition_maximum_flow(file):
     dist_matrix = get_matrix(file)
+    dist_matrix = np.where(dist_matrix == "M", 0, dist_matrix).astype(int)
 
-    diagonal = dist_matrix.diagonal()
-    for val in diagonal:
-        if val != "M":
-            raise Exception("Na diagonale musia byt M")
-
-    dist_matrix = np.where(dist_matrix == "M", inf, dist_matrix).astype(int)
-
+    np.fill_diagonal(dist_matrix, inf)
     size = dist_matrix.shape[0]
     change_matrix = np.zeros((size, size), dtype=int)
 
     # max number of vertices is 2^20
     s = 0
     for s in range(1, 20):
-        if (size - 1) < pow(2, s):
+        if (size - 1) <= pow(2, s):
             break
 
     result = []
@@ -215,16 +209,14 @@ def minimal_addition_maximum_flow(file):
             for y in range(size):
                 dx = [mat[x][l] for l in range(size)]
                 dy = [mat[l][y] for l in range(size)]
-
                 min_arr = np.minimum(dx, dy)
                 max_value = np.max(min_arr)
-
                 # get all indexes of min value as array and start from 1
                 max_indexes = np.where(min_arr == max_value)[0]
                 max_indexes += 1
                 if max_value > mat[x][y]:
                     mat_next[x][y] = max_value
-                    change_matrix[x][y] = max_indexes[-1]
+                    change_matrix[x][y] = max_indexes[0]
 
         def format_changes(value):
             if value == 0:
@@ -288,6 +280,7 @@ def best_neighbour_matrix(file):
 
 
 def best_neighbour(file, initial):
+    dist_matrix = minimal_addition_array(file)
     e_mat = best_neighbour_matrix(file)
     mark_matrix = np.copy(e_mat).astype(str)
     n = e_mat.shape[0]
@@ -298,13 +291,14 @@ def best_neighbour(file, initial):
     while k < n:
         row = [(e_mat[i][ji], ji) for ji in j]
         min_index = min(row, key=lambda t: t[0])[1]
-        i_arr.append((i, e_mat[i][min_index]))
+        i_arr.append((i, dist_matrix[i][min_index]))
         mark_matrix[i][min_index] += "*"
         i = min_index
         j.remove(min_index)
         k += 1
-    i_arr.append((i, e_mat[i][0]))
+    i_arr.append((i, dist_matrix[i][initial]))
     return [i_arr, mark_matrix]
+
 
 # returns list with tuple and array [(Verticle, Weight), [Visualization Array]]
 def nearest_neighbour(file, initial):
@@ -323,90 +317,92 @@ def nearest_neighbour(file, initial):
         i = min_index
         j.remove(min_index)
         k += 1
-    i_arr.append((i, dist_matrix[i][0]))
+    i_arr.append((i, dist_matrix[i][initial]))
     return [i_arr, mark_matrix]
 
 
+def get_tasks(file):
+    if not isinstance(file, str):
+        file = '/'.join(map(str, file))
+    wb = load_workbook(file, data_only=True)
+    ws = wb.active
+    # as object to allow addition of lists to array element
+    tasks_matrix = np.array([[value for value in row] for row in ws.values]).astype(object)
 
-#print(nearest_neighbour("input/def.xlsx", 0))
+    # split all second columns (next tasks) to list
+    tasks_matrix[:, 1] = [tasks.split(",") for tasks in tasks_matrix[:, 1]]
 
-
-
-def traveling_salesperson(file):
-
-    V = 4
-
-    # implementation of traveling Salesman Problem
-    def travellingSalesmanProblem(graph, s):
-
-        # store all vertex apart from source vertex
-        vertex = []
-        for i in range(V):
-            if i != s:
-                vertex.append(i)
-
-                # store minimum weight Hamiltonian Cycle
-        min_path = maxsize
-
-        while True:
-
-            # store current Path weight(cost)
-            current_pathweight = 0
-
-            # compute current path weight
-            k = s
-            for i in range(len(vertex)):
-                current_pathweight += graph[k][vertex[i]]
-                k = vertex[i]
-            current_pathweight += graph[k][s]
-
-            # update minimum
-            min_path = min(min_path, current_pathweight)
-
-            if not next_permutation(vertex):
-                break
-
-        return min_path
-
-        # next_permutation implementation
-
-    def next_permutation(L):
-
-        n = len(L)
-
-        i = n - 2
-        while i >= 0 and L[i] >= L[i + 1]:
-            i -= 1
-
-        if i == -1:
-            return False
-
-        j = i + 1
-        while j < n and L[j] > L[i]:
-            j += 1
-        j -= 1
-
-        L[i], L[j] = L[j], L[i]
-
-        left = i + 1
-        right = n - 1
-
-        while left < right:
-            L[left], L[right] = L[right], L[left]
-            left += 1
-            right -= 1
-
-        return True
-
-    # Driver Code
-    if __name__ == "__main__":
-        # matrix representation of graph
-        graph = [[0, 10, 15, 20], [10, 0, 35, 25],
-                 [15, 35, 0, 30], [20, 25, 30, 0]]
-        s = 0
-        print(travellingSalesmanProblem(graph, s))
+    return tasks_matrix
 
 
+def get_tasks_graph(tasks_matrix):
+    nodes = tasks_matrix[:, 0]
+    edges = []
+    #print(tasks_matrix[:, 0:2])
+    for row in tasks_matrix[:, 0:2]:
+        for task in row[1]:
+            if task is not "-":
+                #edges.append([row[0], task])
+                edges.append([task, row[0]])
+
+    return nodes, edges
 
 
+def cpm(file):
+    import arrowGraphGenerator as agg
+    tasks = get_tasks(file)
+    nodes, edges = agg.generate_arrow_graph(tasks)
+    #tasks = tasks.tolist()
+    tasks = list(tasks)
 
+
+    dummy_edges = [edge for edge in edges if edge[2]['name'] == '']
+    full_edges = [edge for edge in edges if edge[2]['name'] != '']
+    # print(full_edges)
+
+    # for edge in full_edges:
+    #     edge[2]['name'] = string.ascii_uppercase[int(edge[2]['name'])]
+
+    # Collapse end nodes if possible
+    end_nodes = [edge[1] for edge in edges]
+    start_nodes = [edge[0] for edge in edges]
+
+    collapse_nodes = [node for node in end_nodes if node not in start_nodes]
+    end_nodes = [node for node in end_nodes if node in start_nodes]
+
+    nodes = [node for node in nodes if node not in collapse_nodes[1:]]
+
+    for edge in full_edges:
+        if edge[1] in collapse_nodes:
+            edge[1] = collapse_nodes[0]
+
+    # Collapse start nodes if possible
+    # all end nodes
+    end_nodes = [edge[1] for edge in edges]
+    # all start nodes
+    start_nodes = [edge[0] for edge in edges]
+
+    collapse_nodes = [node for node in start_nodes if node not in end_nodes]
+    start_nodes = [node for node in start_nodes if node in end_nodes]
+
+    # remove nodes that can be collapsed but leave one
+    nodes = [node for node in nodes if node not in collapse_nodes[1:]]
+
+    for edge in full_edges:
+        if edge[0] in collapse_nodes:
+            edge[0] = collapse_nodes[0]
+
+    dummy_edges = [edge for edge in edges if edge[2]['name'] is '']
+
+    letters = string.ascii_uppercase
+    # for index, edge in enumerate(dummy_edges):
+        # tasks.append(["FC{}".format(index+1), [edge[0], edge[1]], '0'])
+
+    for task in tasks:
+        task[1] = [[edge[0], edge[1]] for edge in edges if edge[2]['name'] == task[0]]
+    for task in tasks:
+        print(task)
+    #print(tasks)
+
+
+cpm("input/cpm2.xlsx")
