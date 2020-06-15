@@ -1,9 +1,8 @@
-import itertools
-import string
 
-from openpyxl import Workbook
 from openpyxl import load_workbook
 import numpy as np
+import math
+import cpm
 
 inf = 999999
 
@@ -31,7 +30,6 @@ def comp_floyd(incidence_matrix):
                 dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
 
         result["D {}".format(k + 1)] = np.where(res_mat == "999999", "M", res_mat)
-        # print(res_mat)
 
     result["K"] = k_mat
     return result
@@ -339,84 +337,39 @@ def get_tasks(file):
 def get_tasks_graph(tasks_matrix):
     nodes = tasks_matrix[:, 0]
     edges = []
-    #print(tasks_matrix[:, 0:2])
     for row in tasks_matrix[:, 0:2]:
         for task in row[1]:
             if task is not "-":
-                #edges.append([row[0], task])
                 edges.append([task, row[0]])
 
     return nodes, edges
 
 
-def cpm(file):
-    import arrowGraphGenerator as agg
+def pert(file):
     tasks = get_tasks(file)
-    nodes, edges = agg.generate_arrow_graph(tasks)
-    tasks = tasks.tolist()
-    #tasks = list(tasks)
 
-
-    dummy_edges = [edge for edge in edges if edge[2]['name'] == '']
-    full_edges = [edge for edge in edges if edge[2]['name'] != '']
-    # print(full_edges)
-
-    # for edge in full_edges:
-    #     edge[2]['name'] = string.ascii_uppercase[int(edge[2]['name'])]
-
-    # Collapse end nodes if possible
-    end_nodes = [edge[1] for edge in edges]
-    start_nodes = [edge[0] for edge in edges]
-
-    collapse_nodes = [node for node in end_nodes if node not in start_nodes]
-    end_nodes = [node for node in end_nodes if node in start_nodes]
-
-    nodes = [node for node in nodes if node not in collapse_nodes[1:]]
-
-    for edge in full_edges:
-        if edge[1] in collapse_nodes:
-            edge[1] = collapse_nodes[0]
-
-    # Collapse start nodes if possible
-    # all end nodes
-    end_nodes = [edge[1] for edge in edges]
-    # all start nodes
-    start_nodes = [edge[0] for edge in edges]
-
-    collapse_nodes = [node for node in start_nodes if node not in end_nodes]
-    start_nodes = [node for node in start_nodes if node in end_nodes]
-
-    # remove nodes that can be collapsed but leave one
-    nodes = [node for node in nodes if node not in collapse_nodes[1:]]
-
-    for edge in full_edges:
-        if edge[0] in collapse_nodes:
-            edge[0] = collapse_nodes[0]
-
-    dummy_edges = [edge for edge in edges if edge[2]['name'] is '']
-
+    durations = []
+    deviations = []
+    dispertions = []
     for task in tasks:
-        task[1] = list(itertools.chain.from_iterable(
-            [[edge[0], edge[1]] for edge in edges if edge[2]['name'] == task[0]]))
+        duration = (float(task[2]) + 4 * float(task[3]) + float(task[4]))/6
+        durations.append(duration)
+        deviation = (float(task[4])-float(task[2]))/6
+        deviations.append(deviation)
+        dispertions.append(pow(deviation, 2))
 
-    for index, edge in enumerate(dummy_edges):
-        # print(edge[0])
-        tasks.append(["FC{}".format(index + 1), [edge[0], edge[1]], '0'])
+    cpm_table = get_tasks(file)
+    cpm_table = [task[0:2] for task in cpm_table]
+    cpm_table = np.c_[cpm_table, durations]
+    cpm_table = cpm.copm_cpm(cpm_table)
+    sum_deviations = 0
+    for index, task in enumerate(cpm_table):
+        if "Yes" in task[6]:
+            sum_deviations += dispertions[index]
 
-    zm = []
-    km = []
-    zm.append(0)
-    km.append(int(tasks[0][2]))
+    standard_deviation = math.sqrt(sum_deviations)
 
-    print(tasks)
-    for task in tasks:
-        if task is not tasks[0]:
+    tasks = np.c_[tasks, durations, deviations, dispertions]
 
-            print(task)
-            what = [task_next[0] for task_next in tasks if task_next[1][1] == task[1][0]]
-            print(what)
-            km_max = []
-            # for taks in what:
-            #     km[taks]
-            km_max = max([k for k in km if k])
-            # zm.append(max(km[index for index in what]))
+    return tasks, standard_deviation
+

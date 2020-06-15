@@ -2,6 +2,7 @@
 import os
 import pathlib
 import algo as algo
+import cpm as cpm
 import string
 import numpy as np
 import networkx as nx
@@ -53,7 +54,8 @@ def create_algo_menu(file):
     graph_item = FunctionItem("Nakresli graf", create_graph, [file])
     arrow_diagram_item = FunctionItem("Nakresli hranovo-orientovany graf", arrow_diagram, [file])
     node_diagram_item = FunctionItem("Nakresli uzlovo-orientovany graf", node_diagram, [file])
-
+    cpm_table_item = FunctionItem("Cpm tabulka", cpm_table, [file])
+    pert_table_item = FunctionItem("Pert tabulka", pert_table, [file])
 
     algo_menu.append_item(floyd_item)
     algo_menu.append_item(prim_item)
@@ -66,6 +68,8 @@ def create_algo_menu(file):
     algo_menu.append_item(best_neighbour_item)
     algo_menu.append_item(arrow_diagram_item)
     algo_menu.append_item(node_diagram_item)
+    algo_menu.append_item(cpm_table_item)
+    algo_menu.append_item(pert_table_item)
     algo_menu.show()
 
 def get_menu_files():
@@ -231,6 +235,8 @@ def table_print(name, array):
     array = np.hstack((row_headers, array))
 
     for row in array:
+        print(row)
+        print(type(row))
         table.append_row(row)
     print(table)
 
@@ -342,6 +348,41 @@ def node_diagram(file):
     nx.draw_networkx_labels(graph, pos)
 
     plt.show()
+
+
+def cpm_table(file):
+    data = cpm.copm_cpm(algo.get_tasks(file))
+    table = BeautifulTable()
+    table.set_style(BeautifulTable.STYLE_BOX)
+    # create table headers
+    col_headers = ["Cinnost", "ZM", "KM", "ZP", "KP", "RC", "Kriticka"]
+
+    # Set column headers
+    table.column_headers = col_headers
+
+    for row in data:
+        table.append_row(row)
+    print(table)
+
+    PromptUtils(Screen()).enter_to_continue()
+
+
+def pert_table(file):
+    data, standard_deviation = algo.pert(file)
+    table = BeautifulTable()
+    table.set_style(BeautifulTable.STYLE_BOX)
+    # create table headers
+    col_headers = ["Cinnost", "Zavislosti", "aij", "mij", "bij", "trvanie", "odchylka", "rozptyl"]
+
+    # Set column headers
+    table.column_headers = col_headers
+
+    for row in data:
+        table.append_row(row)
+    print(table)
+    print("Smerodajna odchylka trvanie projektu q(Te)= {}".format(standard_deviation))
+
+    PromptUtils(Screen()).enter_to_continue()
 
 
 if __name__ == "__main__":
