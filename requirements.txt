@@ -7,7 +7,7 @@ jdcal==1.4.1
 kiwisolver==1.2.0
 matplotlib==3.2.1
 networkx==2.4
-numpy==1.18.5
+numpy==1.22.0
 openpyxl==3.0.3
 pycparser==2.20
 pyparsing==2.4.7
