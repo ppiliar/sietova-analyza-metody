@@ -13,5 +13,5 @@ pycparser==2.20
 pyparsing==2.4.7
 python-dateutil==2.8.1
 pythonnet==2.5.0
-scipy==1.4.1
+scipy==1.10.0
 six==1.15.0
